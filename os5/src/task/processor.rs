@@ -129,3 +129,13 @@ pub fn munmap(start: usize, len:usize) -> isize {
     let res = task.inner_exclusive_access().munmap(start, len);
     res
 }
+
+
+pub fn set_prio(prio: isize) -> isize {
+    if prio <= 1 {
+        return -1;
+    }
+    let task = current_task().unwrap();
+    task.inner_exclusive_access().set_prio(prio as u8);
+    prio
+}

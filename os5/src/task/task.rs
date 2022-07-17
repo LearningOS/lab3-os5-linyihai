@@ -49,6 +49,8 @@ pub struct TaskControlBlockInner {
     pub exit_code: i32,
     pub syscall_times: [u32;MAX_SYSCALL_NUM],
     pub init_time: usize,
+    pub prio: u8,
+    pub pass: usize,
 }
 
 /// Simple access to its internal fields
@@ -76,6 +78,9 @@ impl TaskControlBlockInner {
     pub fn get_task_info(&self) -> (TaskStatus, [u32;MAX_SYSCALL_NUM], usize) {
         let incr = get_time() - self.init_time;
         (TaskStatus::Running, self.syscall_times, incr / (CLOCK_FREQ / 1000) + 1)
+    }
+    pub fn set_prio(&mut self, prio: u8) {
+        self.prio = prio;
     }
     pub fn mmap(&mut self, start: usize, len: usize, port: usize) -> isize {
         if start % PAGE_SIZE != 0 {
@@ -150,7 +155,9 @@ impl TaskControlBlock {
                     children: Vec::new(),
                     exit_code: 0,
                     syscall_times: [0u32;MAX_SYSCALL_NUM],
-                    init_time: get_time()
+                    init_time: get_time(),
+                    prio: 16,
+                    pass: 0
                 })
             },
         };
@@ -219,7 +226,9 @@ impl TaskControlBlock {
                     children: Vec::new(),
                     exit_code: 0,
                     syscall_times: [0u32;MAX_SYSCALL_NUM],
-                    init_time: get_time()
+                    init_time: get_time(),
+                    prio: 16,
+                    pass: 0
                 })
             },
         });
