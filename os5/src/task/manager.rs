@@ -6,9 +6,9 @@
 
 use super::TaskControlBlock;
 use crate::sync::UPSafeCell;
-use alloc::collections::VecDeque;
 use alloc::sync::Arc;
 use lazy_static::*;
+pub use crate::timer::get_time;
 
 pub struct TaskManager {
     ready_queue:  alloc::vec::Vec<Arc<TaskControlBlock>>
@@ -32,11 +32,17 @@ impl TaskManager {
         if self.ready_queue.is_empty() {
             return task;
         }
-        let mut i: usize  = 0;
-        for _i in 1..self.ready_queue.len() {
-            if (self.ready_queue[i].inner_exclusive_access().pass - self.ready_queue[_i].inner_exclusive_access().pass) as i8 > 0 {
+        let mut i: usize  = get_time() % self.ready_queue.len();
+        for _i in 0..self.ready_queue.len() {
+            let task = &self.ready_queue[_i];
+            let inner = task.inner_exclusive_access();
+            let _pass = inner.pass;
+            drop(task);
+            drop(inner);
+            let pass = self.ready_queue[i].inner_exclusive_access().pass;
+            if (pass - _pass) as i8 > 0 {
                 i = _i;
-            }
+            }           
         }
         let task = self.ready_queue.remove(i);
         let mut stride = u8::MAX / task.inner_exclusive_access().prio;
